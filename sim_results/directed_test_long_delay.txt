@@ -1,0 +1,88 @@
+run all
+--------- [Trans] post_randomize ------
+	 data = 0xaa	 valid_i = 1	 delay = 13
+-----------------------------------------
+--------- [Trans] post_randomize ------
+	 data = 0x55	 valid_i = 1	 delay = 10
+-----------------------------------------
+--------- [Trans] post_randomize ------
+	 data = 0xff	 valid_i = 1	 delay = 6
+-----------------------------------------
+--------- [Trans] post_randomize ------
+	 data = 0x0	 valid_i = 1	 delay = 11
+-----------------------------------------
+--------- [Trans] post_randomize ------
+	 data = 0x80	 valid_i = 1	 delay = 7
+-----------------------------------------
+--------- [DRIVER] Reset Started ---------
+--------- [DRIVER] Reset Ended ---------
+20000 inainte de a se face valid 1
+	DATA = 0xaa
+165000 dupa ce s-a facut valid 1
+165000 dupa ce s-a facut ready 1
+[MON_VR] Data capturata: 0xaa
+--------- [DRIVER-TRANSFER: transaction with index 0 and with following data was transferred ] ---------
+	 data = 0xaa	 valid_i = 1	 delay = 13
+-----------------------------------------
+[SCB] Data adaugata in coada: 0xaa (dimensiune coada: 1)
+175000 inainte de a se face valid 1
+	DATA = 0x55
+285000 dupa ce s-a facut valid 1
+285000 dupa ce s-a facut ready 1
+[MON_VR] Data capturata: 0x55
+--------- [DRIVER-TRANSFER: transaction with index 1 and with following data was transferred ] ---------
+	 data = 0x55	 valid_i = 1	 delay = 10
+-----------------------------------------
+[SCB] Data adaugata in coada: 0x55 (dimensiune coada: 2)
+295000 inainte de a se face valid 1
+	DATA = 0xff
+365000 dupa ce s-a facut valid 1
+365000 dupa ce s-a facut ready 1
+[MON_VR] Data capturata: 0xff
+--------- [DRIVER-TRANSFER: transaction with index 2 and with following data was transferred ] ---------
+	 data = 0xff	 valid_i = 1	 delay = 6
+-----------------------------------------
+[SCB] Data adaugata in coada: 0xff (dimensiune coada: 3)
+375000 inainte de a se face valid 1
+	DATA = 0x0
+--------- [DRIVER-TRANSFER: transaction with index 3 and with following data was transferred ] ---------
+	 data = 0x0	 valid_i = 1	 delay = 11
+-----------------------------------------
+495000 dupa ce s-a facut valid 1
+495000 dupa ce s-a facut ready 1
+[MON_VR] Data capturata: 0x0
+[SCB] Data adaugata in coada: 0x0 (dimensiune coada: 4)
+505000 inainte de a se face valid 1
+[MON_UART] Data capturata: 0xaa
+	DATA = 0x80
+[SCB-PASS] Data :: Expected = 0xaa Actual = 0xaa
+--------- [DRIVER-TRANSFER: transaction with index 4 and with following data was transferred ] ---------
+	 data = 0x80	 valid_i = 1	 delay = 7
+-----------------------------------------
+1805000 dupa ce s-a facut valid 1
+1805000 dupa ce s-a facut ready 1
+[MON_VR] Data capturata: 0x80
+[SCB] Data adaugata in coada: 0x80 (dimensiune coada: 4)
+1815000 inainte de a se face valid 1
+[MON_UART] Data capturata: 0x55
+[SCB-PASS] Data :: Expected = 0x55 Actual = 0x55
+--------- [Valid ready coverage] ---------
+Valid signal coverage = 50.00%
+Write data coverage = 80.00%
+Delay coverage pentru valid-ready = 66.67%
+Valid ready overall coverage = 65.56%
+-----------------------------------------
+Overall coverage = 65.56%
+-----------------------------------------
+--------- [UART coverage] ---------
+UART data coverage = 40.00%
+Delay coverage pentru iesire = 33.33%
+Overall coverage = 34.67%
+-----------------------------------------
+UART transaction coverage = 40.00%
+UART overall coverage = 34.67%
+--------------------------Debug------------------------
+Delay_no_cp = 100.00%
+Delay_short_cp = 0.00%
+Delay_long_cp = 0.00%
+$finish called at time : 4020 ns : File "C:/Users/User/Desktop/CALC4/TSC/UART/environment.sv" Line 77
