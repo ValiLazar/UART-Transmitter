@@ -134,6 +134,3 @@ xsim sim_snapshot -R
 └── test_for_output_delay.sv     # Directed test with delays
 ```
 
-## License
-
-This project is provided for educational purposes.
