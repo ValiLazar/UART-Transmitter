@@ -94,26 +94,12 @@ Select the desired test by editing `testbench.sv` – uncomment the correspondin
 `include "directed_test_long_delay.sv"
 ```
 
-### Using QuestaSim / ModelSim
-
-```bash
-vlog design.sv testbench.sv
-vsim -c testbench -do "run -all; quit"
-```
-
 ### Using Vivado (xsim)
 
 ```bash
 xvlog --sv design.sv testbench.sv
 xelab testbench -s sim_snapshot
 xsim sim_snapshot -R
-```
-
-### Using VCS
-
-```bash
-vcs -sverilog design.sv testbench.sv -o simv
-./simv
 ```
 
 ## Key Verification Features
@@ -170,6 +156,3 @@ Simulation logs for each test are available in the [`sim_results/`](sim_results/
     └── waveform_directed_test_long_delay.png
 ```
 
-## License
-
-This project is provided for educational purposes.
