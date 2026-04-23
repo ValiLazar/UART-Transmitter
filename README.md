@@ -94,6 +94,13 @@ Select the desired test by editing `testbench.sv` – uncomment the correspondin
 `include "directed_test_long_delay.sv"
 ```
 
+### Using QuestaSim / ModelSim
+
+```bash
+vlog design.sv testbench.sv
+vsim -c testbench -do "run -all; quit"
+```
+
 ### Using Vivado (xsim)
 
 ```bash
@@ -102,6 +109,12 @@ xelab testbench -s sim_snapshot
 xsim sim_snapshot -R
 ```
 
+### Using VCS
+
+```bash
+vcs -sverilog design.sv testbench.sv -o simv
+./simv
+```
 
 ## Key Verification Features
 
@@ -110,6 +123,24 @@ xsim sim_snapshot -R
 - **Functional coverage** – covergroups track data value ranges, delay distributions, and UART output bins
 - **Protocol assertions** – valid/ready handshake rules and post-reset TX idle check
 - **Mailbox-based communication** – generator → driver, monitors → scoreboard
+
+## Simulation Results
+
+All tests pass with **0 scoreboard mismatches**. Below is a summary of the results obtained in QuestaSim:
+
+| Test | Transactions | SCB Result | VR Coverage | UART Coverage |
+|------|-------------|------------|-------------|---------------|
+| `directed_test` | 5 directed + 5 random | All PASS | 83.33% | 61.33% |
+| `default_test` | 5 random | All PASS | 65.56% | 61.33% |
+| `directed_test_long_delay` | 5 directed | All PASS | 65.56% | 34.67% |
+
+### Waveform
+
+The waveform below shows the `directed_test_long_delay` simulation, illustrating the FIFO fill-up, FSM state transitions (WAIT → START → DATA → STOP), and correct UART serialization of data bytes `0xAA`, `0x55`, `0xFF`, `0x00`, `0x80`:
+
+![Waveform – directed_test_long_delay](sim_results/waveform_directed_test_long_delay.png)
+
+Simulation logs for each test are available in the [`sim_results/`](sim_results/) folder.
 
 ## Project Structure
 
@@ -131,6 +162,14 @@ xsim sim_snapshot -R
 ├── default_big_test.sv          # Random test (1000 transactions)
 ├── directed_test.sv             # Directed corner-case test
 ├── directed_test_long_delay.sv  # Directed test with hex patterns
-└── test_for_output_delay.sv     # Directed test with delays
+├── test_for_output_delay.sv     # Directed test with delays
+└── sim_results/
+    ├── log_default_test.txt
+    ├── log_directed_test.txt
+    ├── log_directed_test_long_delay.txt
+    └── waveform_directed_test_long_delay.png
 ```
 
+## License
+
+This project is provided for educational purposes.
