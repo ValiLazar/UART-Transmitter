@@ -3,7 +3,7 @@
 
 `include "environment.sv"
 
-program test(vr_intf vr_if, uart_intf uart_if);
+program default_big_test(vr_intf vr_if, uart_intf uart_if);
   
   environment env;
   

@@ -1,6 +1,20 @@
 `ifndef __ENVIRONMENT
 `define __ENVIRONMENT
 
+// Macro-uri globale ale verification environment-ului.
+`ifndef DIVIDER
+  `define DIVIDER 7        // BIT_PERIOD = 62500000 >> (20+3) = 7 tacte/bit
+`endif
+`ifndef DATA_WIDTH
+  `define DATA_WIDTH 4
+`endif
+`ifndef HAS_PARITY
+  `define HAS_PARITY 1
+`endif
+`ifndef NO_BITS_STOP
+  `define NO_BITS_STOP 2
+`endif
+
 
 `include "transaction_valid_ready.sv"
 `include "transaction_uart.sv"
@@ -62,12 +76,32 @@ class environment;
   endtask
   
   task post_test();
-    //wait(gen_ended.triggered);
-  //  wait(gen.repeat_count == driv.no_transaction_valid_readys);
-    //wait(scb.no_transactions == gen.repeat_count);
-   // wait(scb.expected_queue.size() == 0);
-    #4000;
-   colector_coverage.print_coverage();
+    // Asteptam pana cand coada e goala (toate datele au fost transmise pe UART)
+    // SAU pana la timeout. Daca apare timeout cu coada nevida -> bug.
+    fork
+      begin : wait_queue_empty
+        // Asteptam ca coada de scoreboard sa devina goala SI sa nu mai vina
+        // tranzactii noi pe valid-ready (idle suficient timp).
+        int idle_count;
+        idle_count = 0;
+        while (idle_count < 200) begin
+          @(posedge vr_vif.clk);
+          if (scb.expected_queue.size() == 0)
+            idle_count++;
+          else
+            idle_count = 0;
+        end
+      end
+      begin : timeout
+        // Timeout maxim: 1ms = ar trebui sa ajunga pentru orice test rezonabil
+        #10000000;
+        $display("[ENV] Timeout in post_test (1ms) - coada inca nevida");
+      end
+    join_any
+    disable fork;
+    
+    scb.final_check();
+    colector_coverage.print_coverage();
   endtask 
   
   task run;

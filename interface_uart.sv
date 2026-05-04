@@ -22,5 +22,5 @@ interface uart_intf(input logic clk, rst_n);
   
   asertia_tx_idle: assert property (tx_idle_after_reset) 
     else $error("UART_INTF: tx nu este idle (1) dupa reset");
-      
+
 endinterface

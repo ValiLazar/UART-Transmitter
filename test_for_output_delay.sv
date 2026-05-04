@@ -12,13 +12,14 @@ program test(vr_intf vr_if, uart_intf uart_if);
     env = new(vr_if, uart_if);
     env.gen.repeat_count = 5;
 
-    env.gen.write_single_transaction_valid_ready(255);
+    // Valori pe 4 biti (0..15)
+    env.gen.write_single_transaction_valid_ready(15);
     @(vr_if.clk);
     env.gen.write_single_transaction_valid_ready(0);
     repeat(30) @(vr_if.clk);
-    env.gen.write_single_transaction_valid_ready(127);
-    env.gen.write_single_transaction_valid_ready(191);
-    env.gen.write_single_transaction_valid_ready(63);
+    env.gen.write_single_transaction_valid_ready(7);
+    env.gen.write_single_transaction_valid_ready(11);
+    env.gen.write_single_transaction_valid_ready(3);
     
     env.run();
   end

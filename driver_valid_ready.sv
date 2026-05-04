@@ -20,25 +20,29 @@ class driver;
     $display("--------- [DRIVER] Reset Ended ---------");
   endtask
   
-  task drive;
+task drive;
     transaction_valid_ready trans;
     wait(vr_vif.rst_n);
     
     gen2driv.get(trans);
     
+    // 1. Așteptăm numărul exact de cicli de delay (dacă e 0, nu așteaptă deloc)
     repeat(trans.delay) @(posedge vr_vif.DRIVER.clk);
     
     if (trans.valid_i) begin
-      @(posedge vr_vif.DRIVER.clk);
-      wait(`DRIV_IF.ready_o);
+      // 2. Punem datele pe interfață IMEDIAT (fără @posedge suplimentar aici)
       `DRIV_IF.data_i  <= trans.data;
       `DRIV_IF.valid_i <= trans.valid_i;
-      if(trans.valid_i) begin
-      $display("\tDATA = 0x%0h", trans.data);
+      
+      // 3. Așteptăm frontul de ceas în care READY este 1 (handshake valid-ready)
+      // Folosim "iff" pentru a ne asigura că eșantionăm corect starea semnalului ready_o
       @(posedge vr_vif.DRIVER.clk iff `DRIV_IF.ready_o);
+      
+      // 4. Afișăm data și tragem valid în jos pentru a termina tranzacția
+      $display("\tDATA = 0x%0h", trans.data);
       `DRIV_IF.valid_i <= 0;
-      end
     end
+    
     $display("--------- [DRIVER-TRANSFER: transaction with index %0d and with following data was transferred ] ---------", no_transaction_valid_readys);
     trans.display();
     $display("-----------------------------------------");

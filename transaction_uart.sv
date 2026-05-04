@@ -1,7 +1,7 @@
 class transaction_uart;
-   bit [7:0] data;
-   int delay;
-
+   bit [3:0] data;     // DATA_WIDTH = 4
+   int       delay;
+ 
   function void post_randomize();
     $display("--------- [Trans] post_randomize ------");
     $display("\t data = 0x%0h\t  delay = %0d", data, delay);
@@ -16,3 +16,4 @@ class transaction_uart;
     return trans;
   endfunction
 endclass
+ 

@@ -17,23 +17,21 @@ class generator;
       trans = new();
       if (!trans.randomize()) $fatal("Gen:: trans randomization failed");
       
-    tr = trans.do_copy();
-     gen2driv.put(tr);
-     // gen2driv.put(trans); //de incercat
-
+      tr = trans.do_copy();
+      gen2driv.put(tr);
     end
     -> ended;
   endtask
 
   
-  task write_single_transaction_valid_ready(bit [9:0] data_param);
-    trans = new();  // 2. Instanțiem 'trans' înainte să îl folosim
+  task write_single_transaction_valid_ready(bit [3:0] data_param);
+    trans = new();
 
-    if( !trans.randomize() with {data == data_param; valid_i == 1;})
-          $fatal("Gen:: trans randomization failed");
+    if (!trans.randomize() with {data == data_param; valid_i == 1;})
+      $fatal("Gen:: trans randomization failed");
           
     tr = trans.do_copy();
     gen2driv.put(tr);
-endtask
+  endtask
   
 endclass

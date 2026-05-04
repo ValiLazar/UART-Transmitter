@@ -3,11 +3,14 @@
 
 
 `define MON_UART uart_vif.MONITOR.monitor_cb
-`define DIVIDER 16
-`define DATA_WIDTH 8
-`define HAS_PARITY 0
 
 class monitor_uart;
+
+  // Parametri hardcodati ai DUT-ului (pentru BOUD_RATE=3, DATA_WIDTH=4, HAS_PARITY=1)
+  // BIT_PERIOD = 62500000 >> (20 + 3) = 7
+  parameter int DIVIDER       = 7;
+  parameter int DATA_WIDTH    = 4;
+  parameter int HAS_PARITY    = 1;
 
   virtual vr_intf   vr_vif;
   virtual uart_intf uart_vif;
@@ -26,41 +29,52 @@ class monitor_uart;
     forever begin
       transaction_uart trans;
       trans = new();
-        while( `MON_UART.tx)begin // se calculeaza intarzierea dintre doua tranzactii
-          @(`MON_UART);
-          trans.delay++;
-        end
-        if(trans.delay > 0) begin
-          trans.delay--; // se scade 1 pentru ca s-a incrementat si pentru tranzactia curenta
-        end
 
-        repeat(`DIVIDER/2) @(posedge vr_vif.MONITOR.clk);//se asteapta pana la mijlocul bitului de start
-         assert (`MON_UART.tx == 0) // Verificăm bitul de start
-         else $error("Monitor UART: Start bit error detected!");
-          repeat(`DIVIDER - `DIVIDER/2) @(posedge vr_vif.MONITOR.clk); //se astepata pana la finalul bitului de start
-        for (int i = 0; i < `DATA_WIDTH; i++) begin // preluarea datelor
-          repeat(`DIVIDER/2) @(posedge vr_vif.MONITOR.clk);//se asteapta pana la mijlocul bitului de date
-          trans.data[i] = `MON_UART.tx;
-          repeat(`DIVIDER - `DIVIDER/2) @(posedge vr_vif.MONITOR.clk);//se asteapta pana la finalul bitului de date
-        end
+      // -------- IDLE / DELAY --------
+      while (`MON_UART.tx) begin
+        @(`MON_UART);
+        trans.delay++;
+      end
+      if (trans.delay > 0) begin
+        trans.delay--;
+      end
 
-        if (`HAS_PARITY) begin
-          repeat(`DIVIDER/2) @(posedge vr_vif.MONITOR.clk);//se asteapta pana la mijlocul bitului de paritate
-          assert (`MON_UART.tx == ^trans.data) // Verificăm bitul de paritate
-            else $error("Monitor UART: Parity error detected!");
-          repeat(`DIVIDER - `DIVIDER/2) @(posedge vr_vif.MONITOR.clk);
-        end
+      // -------- START BIT --------
+      repeat(DIVIDER/2) @(posedge vr_vif.MONITOR.clk);
+      assert (`MON_UART.tx == 0)
+        else $error("Monitor UART: Start bit error detected!");
+      repeat(DIVIDER - DIVIDER/2) @(posedge vr_vif.MONITOR.clk);
 
-        repeat(`DIVIDER/2) @(posedge vr_vif.MONITOR.clk);//se asteapta pana la mijlocul bitului de stop
-        assert (`MON_UART.tx == 1) // Verificăm bitul de stop
-          else $error("Monitor UART: Stop bit error detected!");
-        repeat(`DIVIDER - `DIVIDER/2) @(posedge vr_vif.MONITOR.clk);
+      // -------- DATA BITS (MSB first) --------
+      // DUT-ul transmite biții incepand cu data[DATA_WIDTH-1] (MSB) catre data[0] (LSB).
+      // Vezi uart.v: counter-ul bit_cnt porneste de la DATA_WIDTH-1 si decrementeaza.
+      for (int i = DATA_WIDTH - 1; i >= 0; i--) begin
+        repeat(DIVIDER/2) @(posedge vr_vif.MONITOR.clk);
+        trans.data[i] = `MON_UART.tx;
+        repeat(DIVIDER - DIVIDER/2) @(posedge vr_vif.MONITOR.clk);
+      end
 
-        $display("[MON_UART] Data capturata: 0x%0h", trans.data);
-        mon2scb.put(trans);
+      // -------- PARITY BIT --------
+      if (HAS_PARITY) begin
+        repeat(DIVIDER/2) @(posedge vr_vif.MONITOR.clk);
+        assert (`MON_UART.tx == ^trans.data)
+          else $error("Monitor UART: Parity error! tx=%0b, expected=%0b, data=0x%0h",
+                      `MON_UART.tx, ^trans.data, trans.data);
+        repeat(DIVIDER - DIVIDER/2) @(posedge vr_vif.MONITOR.clk);
+      end
 
-  colector_coverage.sample_uart(trans);
-      
+      // -------- STOP BIT (primul) --------
+      repeat(DIVIDER/2) @(posedge vr_vif.MONITOR.clk);
+      assert (`MON_UART.tx == 1)
+        else $error("Monitor UART: Stop bit error detected!");
+      repeat(DIVIDER - DIVIDER/2) @(posedge vr_vif.MONITOR.clk);
+
+      // Pentru NO_BITS_STOP=2, al doilea bit de stop va fi numarat ca delay in iteratia urmatoare.
+
+      $display("[MON_UART] Data capturata: 0x%0h, delay=%0d", trans.data, trans.delay);
+      mon2scb.put(trans);
+
+      colector_coverage.sample_uart(trans);
     end
   endtask
 
