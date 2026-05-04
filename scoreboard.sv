@@ -1,25 +1,22 @@
 `ifndef __SCOREBOARD
 `define __SCOREBOARD
 
-
 class scoreboard;
   
   mailbox mon_vr2scb;
   mailbox mon_uart2scb;
   
-  int no_transactions;       // tranzactii validate cu succes pe UART
-  int no_vr_transactions;    // tranzactii intrate in valid-ready
-  int no_errors;             // numar erori detectate
+  int no_transactions;
+  int no_vr_transactions;
+  int no_errors;
   
   bit [3:0] expected_queue[$];
   
-
-  coverage colector_coverage;
+  // ELIMINAT: coverage colector_coverage;  -- nu e folosit aici, monitor-ul face sampling
   
   function new(mailbox mon_vr2scb, mailbox mon_uart2scb);
     this.mon_vr2scb   = mon_vr2scb;
     this.mon_uart2scb = mon_uart2scb;
-    colector_coverage  = new();
   endfunction
 
   task collect_vr;
@@ -27,18 +24,17 @@ class scoreboard;
     forever begin
       mon_vr2scb.get(trans);
       expected_queue.push_back(trans.data);
-      colector_coverage.sample_vr(trans);
+      // ELIMINAT: colector_coverage.sample_vr(trans);  -- monitor-ul face sampling
       no_vr_transactions++;
       $display("[SCB] Data adaugata in coada: 0x%0h (dimensiune coada: %0d)", trans.data, expected_queue.size());
     end
   endtask
   
-
   task collect_uart;
     transaction_uart trans;
     forever begin
       mon_uart2scb.get(trans);
-      colector_coverage.sample_uart(trans);
+      // ELIMINAT: colector_coverage.sample_uart(trans);  -- monitor-ul face sampling
       
       if (expected_queue.size() > 0) begin
         bit [3:0] expected_data;
@@ -66,9 +62,6 @@ class scoreboard;
     join_any
   endtask
 
-  // ============================================================
-  //   VERIFICARE FINALA - se apeleaza din environment.post_test
-  // ============================================================
   function void final_check();
     $display("=========================================");
     $display("[SCB] Final check:");
@@ -77,8 +70,6 @@ class scoreboard;
     $display("[SCB]   Tranzactii ramase in coada       : %0d", expected_queue.size());
     $display("[SCB]   Erori detectate                  : %0d", no_errors);
     
-    // Daca au ramas date in coada, inseamna ca au fost trimise pe valid-ready
-    // dar nu au iesit pe UART => BUG_FIFO_FULL sau BUG_FIFO_SMALLER (date pierdute)
     if (expected_queue.size() != 0) begin
       $error("[SCB-FAIL] %0d date trimise pe valid-ready dar nereceptionate pe UART! Posibil BUG_FIFO_FULL sau BUG_FIFO_SMALLER", expected_queue.size());
       foreach (expected_queue[i])

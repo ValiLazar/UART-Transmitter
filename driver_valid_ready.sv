@@ -14,8 +14,9 @@ class driver;
   task reset;
     wait(!vr_vif.rst_n);
     $display("--------- [DRIVER] Reset Started ---------");
-    `DRIV_IF.data_i  <= 0;
-    `DRIV_IF.valid_i <= 0;       
+    // Folosim vr_vif direct pentru a ocoli delay-ul blocului de ceas!
+    vr_vif.data_i  = 0; 
+    vr_vif.valid_i = 0;       
     wait(vr_vif.rst_n);
     $display("--------- [DRIVER] Reset Ended ---------");
   endtask
@@ -49,17 +50,29 @@ task drive;
     no_transaction_valid_readys++;
   endtask
   
-  task main;
+task main;
     forever begin
       fork
         begin
           wait(!vr_vif.rst_n);
         end
         begin
+          wait(vr_vif.rst_n); 
           forever drive();
         end
       join_any
-      disable fork;
+      disable fork; 
+
+      if (!vr_vif.rst_n) begin
+        $display("--------- [DRIVER] Reset aplicat in timpul transmisiei! Curatam semnalele... ---------");
+        
+        // Folosim vr_vif direct, ca să oprim instantaneu semnalele
+        vr_vif.data_i  = 0;
+        vr_vif.valid_i = 0;
+        
+        wait(vr_vif.rst_n);
+        $display("--------- [DRIVER] Resetul a luat sfarsit, reluam functionarea ---------");
+      end
     end
   endtask
         

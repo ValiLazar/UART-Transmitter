@@ -72,7 +72,7 @@ class environment;
       mon_vr.main();
       mon_uart.main();
       scb.main();      
-    join_any
+    join_none
   endtask
   
   task post_test();

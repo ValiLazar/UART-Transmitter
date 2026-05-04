@@ -9,7 +9,7 @@
 //   - BUG_CORRPUTED_DATA (20% din date sunt modificate)
 // Trimitem 16 valori distincte, fara delay -> umplem FIFO-ul de mai multe ori.
 
-program test(vr_intf vr_if, uart_intf uart_if);
+program fifo_stress_test(vr_intf vr_if, uart_intf uart_if);
   
   environment env;
   
@@ -20,8 +20,6 @@ program test(vr_intf vr_if, uart_intf uart_if);
 
     env.gen.repeat_count = 0; // doar tranzactii directe
     
-    // 16 valori distincte - toate cele 16 valori posibile pe 4 biti.
-    // Cu trimitere rapida (delay=0), FIFO-ul se umple si trebuie sa-l golim.
     for (int i = 0; i < 16; i++) begin
       env.gen.write_single_transaction_valid_ready(i[3:0]);
     end

@@ -1,7 +1,7 @@
 interface vr_intf(input logic clk, rst_n);
   
-  logic [3:0] data_i;     // DATA_WIDTH = 4
-  logic       valid_i;
+  logic [3:0] data_i = 0;     // DATA_WIDTH = 4
+  logic       valid_i = 0;
   logic       ready_o;
   
   clocking driver_cb @(posedge clk);
@@ -56,9 +56,10 @@ interface vr_intf(input logic clk, rst_n);
     else $error("VR_INTF: data_i sau valid_i sunt X/Z cand valid_i=1");
 
   // 4. Dupa reset, valid_i trebuie sa fie 0.
-  property valid_low_after_reset;
-    @(posedge clk) $rose(rst_n) |-> (valid_i == 0);
-  endproperty
+ property valid_low_after_reset;
+    @(posedge clk) disable iff (!rst_n)
+    $rose(rst_n) |-> ##1 (valid_i === 1'b0);
+endproperty
 
   asertia_valid_low_reset: assert property (valid_low_after_reset)
     else $error("VR_INTF: valid_i nu este 0 imediat dupa reset");

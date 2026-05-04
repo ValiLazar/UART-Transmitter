@@ -65,8 +65,9 @@ end
 
   //test t1(vr_if, uart_if);
   
-  default_big_test t1(vr_if, uart_if);
-  //directed_test_long_delay(vr_if,uart_if);
+  //default_big_test t1(vr_if, uart_if);
+  //directed_test_long_delay t3(vr_if,uart_if);
+  reset_test t2(vr_if, uart_if);
 
 uart#(
   .DATA_WIDTH  (DATA_WIDTH  ),

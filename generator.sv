@@ -1,7 +1,7 @@
 
 class generator;
   
-  rand transaction_valid_ready trans, tr;
+  transaction_valid_ready trans, tr;
   int repeat_count;
   
   mailbox gen2driv;

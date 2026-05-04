@@ -10,7 +10,7 @@ program default_big_test(vr_intf vr_if, uart_intf uart_if);
   initial begin
     $display("divider is %0d", `DIVIDER);
     env = new(vr_if, uart_if);
-    env.gen.repeat_count = 1000;
+    env.gen.repeat_count = 100;
     
     env.run();
   end

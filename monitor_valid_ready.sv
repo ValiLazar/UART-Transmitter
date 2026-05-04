@@ -1,13 +1,10 @@
-
 `define MON_VR vr_vif.MONITOR.monitor_cb
 
 class monitor_valid_ready;
 
   virtual vr_intf vr_vif;
   mailbox mon2scb;
-
   coverage colector_coverage;
-
   int nr_tranazctii;
 
   function new(virtual vr_intf vr_vif, mailbox mon2scb, coverage colector_coverage);
@@ -17,30 +14,42 @@ class monitor_valid_ready;
   endfunction
 
   task main;
+    transaction_valid_ready trans;
+    int delay_count;
+    
+    // Asteptam un ciclu initial dupa reset
+    @(`MON_VR);
+    delay_count = 0;
+    
     forever begin
-      transaction_valid_ready trans;
-        trans = new();
-
-        $display("%0t inainte de a se face valid 1", $time);
-      while (`MON_VR.valid_i ==0) begin
-      @(posedge vr_vif.clk);
-      trans.delay++;
-      end
-        $display("%0t dupa ce s-a facut valid 1", $time);
-
-      wait( `MON_VR.ready_o == 1);
-     /* if (nr_tranazctii ==2) 
+      // Asteptam pana e handshake (valid && ready) PE ACELASI ciclu de ceas
+      // Folosim @(`MON_VR iff ...) - asta avanseaza UN ciclu si verifica.
+      // Daca conditia e indeplinita imediat, nu functioneaza corect, deci
+      // facem manual:
       
-      $stop;*/
-        $display("%0t dupa ce s-a facut ready 1", $time);
+      if (`MON_VR.valid_i && `MON_VR.ready_o) begin
+        // Handshake detectat in ciclul curent -> capturam
+        trans = new();
         trans.data    = `MON_VR.data_i;
         trans.valid_i = `MON_VR.valid_i;
-        $display("[MON_VR] Data capturata: 0x%0h", trans.data);
+        trans.delay   = delay_count;
+        
+        $display("[MON_VR] %0t Handshake: data=0x%0h delay=%0d", 
+                 $time, trans.data, delay_count);
+        
         mon2scb.put(trans);
         colector_coverage.sample_vr(trans);
-         @(posedge vr_vif.clk);
         nr_tranazctii++;
+        
+        delay_count = 0;
+      end else begin
+        // Nu e handshake -> contorizam delay
+        delay_count++;
       end
+      
+      // Avansam un ciclu si reluam
+      @(`MON_VR);
+    end
   endtask
 
 endclass
