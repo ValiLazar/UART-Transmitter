@@ -26,14 +26,19 @@ module testbench;
   vr_intf   vr_if(clk, rst_n);
   uart_intf uart_if(clk, rst_n);
 
-  //test t1(vr_if, uart_if);
-  
+  //default_test t1(vr_if, uart_if);
   default_big_test t1(vr_if, uart_if);
   //directed_test_long_delay(vr_if,uart_if);
-   //fifo_stress_test t1(vr_if, uart_if);
-  // DUT-ul nou: modulul "uart"
+  //fifo_stress_test t1(vr_if, uart_if);
   //default_test t1(vr_if, uart_if);
   //reset_test t2(vr_if, uart_if); 
+  //lsb_data_test t3(vr_if, uart_if);
+  //mid_transmission_reset_test t4(vr_if, uart_if);
+  //back_to_back_test t5(vr_if, uart_if);
+  //fifo_full_recovery_test t6(vr_if, uart_if);
+  //parity_test t7(vr_if, uart_if);
+
+
   uart #(
     .DATA_WIDTH  (4),
     .FIFO_DEPTH  (8),

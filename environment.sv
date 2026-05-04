@@ -1,9 +1,9 @@
 `ifndef __ENVIRONMENT
 `define __ENVIRONMENT
 
-// Macro-uri globale ale verification environment-ului.
+// macro-uri globale - daca nu sunt definite altundeva, pune valorile astea
 `ifndef DIVIDER
-  `define DIVIDER 7        // BIT_PERIOD = 62500000 >> (20+3) = 7 tacte/bit
+  `define DIVIDER 7
 `endif
 `ifndef DATA_WIDTH
   `define DATA_WIDTH 4
@@ -15,7 +15,7 @@
   `define NO_BITS_STOP 2
 `endif
 
-
+// includem toate componentele in ordinea dependentelor
 `include "transaction_valid_ready.sv"
 `include "transaction_uart.sv"
 `include "generator.sv"
@@ -24,26 +24,30 @@
 `include "monitor_valid_ready.sv"
 `include "monitor_uart.sv"
 `include "scoreboard.sv"
- 
+
 class environment;
   
+  // componentele
   generator            gen;
   driver               driv;
   monitor_valid_ready  mon_vr;
   monitor_uart         mon_uart;
   scoreboard           scb;
   
+  // mailbox-urile care leaga componentele
   mailbox gen2driv;
   mailbox mon_vr2scb;
   mailbox mon_uart2scb;
   
   event gen_ended;
-
+  
   coverage colector_coverage;
   
+  // handles catre interfete
   virtual vr_intf   vr_vif;
   virtual uart_intf uart_vif;
   
+  // creeaza si conecteaza tot
   function new(virtual vr_intf vr_vif, virtual uart_intf uart_vif);
     this.vr_vif   = vr_vif;
     this.uart_vif = uart_vif;
@@ -52,7 +56,7 @@ class environment;
     mon_vr2scb   = new();
     mon_uart2scb = new();
     
-    colector_coverage = new();
+    colector_coverage = new();    // important: inainte de monitoare
 
     gen      = new(gen2driv, gen_ended);
     driv     = new(vr_vif, gen2driv);
@@ -61,10 +65,12 @@ class environment;
     scb      = new(mon_vr2scb, mon_uart2scb);
   endfunction
   
+  // pregatire (resetul)
   task pre_test();
     driv.reset();
   endtask
   
+  // pornim toate componentele in paralel
   task test();
     fork 
       gen.main();
@@ -75,13 +81,11 @@ class environment;
     join_none
   endtask
   
+  // asteptam ca tot ce e in DUT sa iasa
   task post_test();
-    // Asteptam pana cand coada e goala (toate datele au fost transmise pe UART)
-    // SAU pana la timeout. Daca apare timeout cu coada nevida -> bug.
     fork
+      // asteptam coada goala 200 cicluri consecutive
       begin : wait_queue_empty
-        // Asteptam ca coada de scoreboard sa devina goala SI sa nu mai vina
-        // tranzactii noi pe valid-ready (idle suficient timp).
         int idle_count;
         idle_count = 0;
         while (idle_count < 200) begin
@@ -92,8 +96,8 @@ class environment;
             idle_count = 0;
         end
       end
+      // siguranta - max 1ms
       begin : timeout
-        // Timeout maxim: 1ms = ar trebui sa ajunga pentru orice test rezonabil
         #10000000;
         $display("[ENV] Timeout in post_test (1ms) - coada inca nevida");
       end
@@ -104,10 +108,17 @@ class environment;
     colector_coverage.print_coverage();
   endtask 
   
+  // ruleaza in ordine
   task run;
     pre_test();
     test();
     post_test();
+    $display("[ENV] Sumar: gen=%0d, driv=%0d, mon_vr=%0d, scb=%0d, mon_uart=%0d",
+             gen.repeat_count, 
+             driv.no_transaction_valid_readys,
+             mon_vr.nr_tranazctii,
+             scb.no_vr_transactions,
+             scb.no_transactions);
     $finish;
   endtask
   

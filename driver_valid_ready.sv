@@ -2,7 +2,7 @@
 
 class driver;
   
-  int no_transaction_valid_readys;
+  int no_transaction_valid_readys;   // contor
   virtual vr_intf vr_vif;
   mailbox gen2driv;
   
@@ -11,67 +11,74 @@ class driver;
     this.gen2driv = gen2driv;
   endfunction
   
+  // se ruleaza la inceput - asteapta resetul si curata semnalele
   task reset;
     wait(!vr_vif.rst_n);
     $display("--------- [DRIVER] Reset Started ---------");
-    // Folosim vr_vif direct pentru a ocoli delay-ul blocului de ceas!
+    
+    // direct pe vr_vif (nu prin CB) ca sa fie INSTANT, nu cu skew
     vr_vif.data_i  = 0; 
     vr_vif.valid_i = 0;       
+    
     wait(vr_vif.rst_n);
     $display("--------- [DRIVER] Reset Ended ---------");
   endtask
   
-task drive;
+  // ia O tranzactie din mailbox si o aplica pe interfata
+  task drive;
     transaction_valid_ready trans;
     wait(vr_vif.rst_n);
     
-    gen2driv.get(trans);
+    gen2driv.get(trans);        // blocheaza pana primim ceva
     
-    // 1. Așteptăm numărul exact de cicli de delay (dacă e 0, nu așteaptă deloc)
+    // delay-ul cerut de tranzactie (cu valid_i jos)
     repeat(trans.delay) @(posedge vr_vif.DRIVER.clk);
     
     if (trans.valid_i) begin
-      // 2. Punem datele pe interfață IMEDIAT (fără @posedge suplimentar aici)
+      // punem datele si ridicam valid_i
       `DRIV_IF.data_i  <= trans.data;
-      `DRIV_IF.valid_i <= trans.valid_i;
+      `DRIV_IF.valid_i <= 1'b1;
       
-      // 3. Așteptăm frontul de ceas în care READY este 1 (handshake valid-ready)
-      // Folosim "iff" pentru a ne asigura că eșantionăm corect starea semnalului ready_o
+      // asteptam handshake (ready_o == 1)
       @(posedge vr_vif.DRIVER.clk iff `DRIV_IF.ready_o);
       
-      // 4. Afișăm data și tragem valid în jos pentru a termina tranzacția
       $display("\tDATA = 0x%0h", trans.data);
-      `DRIV_IF.valid_i <= 0;
+      
+      // tragem valid jos si curatam data
+      `DRIV_IF.valid_i <= 1'b0;
+      `DRIV_IF.data_i  <= '0;
+      @(posedge vr_vif.DRIVER.clk);   // un ciclu pauza intre tranzactii
+    end else begin
+      // tranzactie idle, doar asiguram ca valid e jos
+      `DRIV_IF.valid_i <= 1'b0;
     end
     
-    $display("--------- [DRIVER-TRANSFER: transaction with index %0d and with following data was transferred ] ---------", no_transaction_valid_readys);
+    $display("--------- [DRIVER-TRANSFER: transaction with index %0d ] ---------", no_transaction_valid_readys);
     trans.display();
-    $display("-----------------------------------------");
     no_transaction_valid_readys++;
   endtask
   
-task main;
+  // bucla principala - robusta la reset
+  task main;
     forever begin
       fork
         begin
-          wait(!vr_vif.rst_n);
+          wait(!vr_vif.rst_n);    // detecteaza inceperea unui reset
         end
         begin
           wait(vr_vif.rst_n); 
-          forever drive();
+          forever drive();        // ruleaza driverul normal
         end
       join_any
-      disable fork; 
+      disable fork;               // oprim ce ramane
 
+      // daca am intrat in reset in mijlocul transmisiei, curatam semnalele
       if (!vr_vif.rst_n) begin
-        $display("--------- [DRIVER] Reset aplicat in timpul transmisiei! Curatam semnalele... ---------");
-        
-        // Folosim vr_vif direct, ca să oprim instantaneu semnalele
+        $display("--------- [DRIVER] Reset aplicat in timpul transmisiei! ---------");
         vr_vif.data_i  = 0;
         vr_vif.valid_i = 0;
-        
         wait(vr_vif.rst_n);
-        $display("--------- [DRIVER] Resetul a luat sfarsit, reluam functionarea ---------");
+        $display("--------- [DRIVER] Reset terminat, reluam ---------");
       end
     end
   endtask

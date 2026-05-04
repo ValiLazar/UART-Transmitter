@@ -3,7 +3,7 @@
 class monitor_valid_ready;
 
   virtual vr_intf vr_vif;
-  mailbox mon2scb;
+  mailbox mon2scb;            // catre scoreboard
   coverage colector_coverage;
   int nr_tranazctii;
 
@@ -13,22 +13,17 @@ class monitor_valid_ready;
     this.colector_coverage = colector_coverage;
   endfunction
 
+  // detecteaza handshake-uri si le raporteaza
   task main;
     transaction_valid_ready trans;
     int delay_count;
     
-    // Asteptam un ciclu initial dupa reset
-    @(`MON_VR);
+    @(`MON_VR);                 // un ciclu sa treaca dupa reset
     delay_count = 0;
     
     forever begin
-      // Asteptam pana e handshake (valid && ready) PE ACELASI ciclu de ceas
-      // Folosim @(`MON_VR iff ...) - asta avanseaza UN ciclu si verifica.
-      // Daca conditia e indeplinita imediat, nu functioneaza corect, deci
-      // facem manual:
-      
+      // pe fiecare ciclu, verificam daca e handshake
       if (`MON_VR.valid_i && `MON_VR.ready_o) begin
-        // Handshake detectat in ciclul curent -> capturam
         trans = new();
         trans.data    = `MON_VR.data_i;
         trans.valid_i = `MON_VR.valid_i;
@@ -40,15 +35,12 @@ class monitor_valid_ready;
         mon2scb.put(trans);
         colector_coverage.sample_vr(trans);
         nr_tranazctii++;
-        
         delay_count = 0;
       end else begin
-        // Nu e handshake -> contorizam delay
-        delay_count++;
+        delay_count++;          // numaram cate cicluri de idle
       end
       
-      // Avansam un ciclu si reluam
-      @(`MON_VR);
+      @(`MON_VR);               // avansam un ciclu
     end
   endtask
 
